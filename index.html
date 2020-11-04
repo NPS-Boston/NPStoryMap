@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+	<script src="./node_modules/papaparse/papaparse.js"></script>
+	<script src="./node_modules/jquery/dist/jquery.min.js"></script>
+	<script src="./node_modules/popper.js/dist/popper.min.js"></script>
+	<script src="./node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+	<script src="./node_modules/mustache/mustache.min.js"></script>
+	<link href="./node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="https://www.nps.gov/common/commonspot/templates/assetsCT/stylesheets/css/main.min.css" rel="stylesheet">
+	<script src="//cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+	<link href="//cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" rel="stylesheet">
+	<link href="//cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css" rel="stylesheet">
+	<style>
+		body {
+			max-width:1024px;
+			margin-left:auto;
+			margin-right:auto;
+			margin-top:2rem;
+		}
+		textarea{
+			width: 90%;
+			height: 400px;
+			margin-left: auto;
+			margin-right: auto;
+			display: block;
+			border:2px solid black;
+		}
+		h1{
+			font-size:1.5rem;
+			text-align:center;
+		}
+		h2{
+			font-size:1.25rem;
+		}
+		h3{
+			font-size:1.125rem;
+		}
+		.slick-prev:before, .slick-next:before {
+			color:black;
+		}
+		.instructionSlide{
+
+		}
+		#csvTable {
+			height:400px;
+			width:100%;
+			overflow:scroll;
+		}
+		div.tab-pane.fade.show{
+			opacity:1;
+		}
+		#markup {
+			font-family:monospace;
+			white-space:nowrap;
+		}
+	</style>
+	<title>NPStoryMap Builder</title>
+</head>
+<body>
+<h1>NPStoryMap builder. Combine the power of NPMap/Leaflet with the smooth scrolling of slick.js slide carousel</h1>
+	<ul class="nav nav-tabs" id="myTab" role="tablist">
+		<li class='nav-item'>
+			<a class="nav-link active" id="step1-tab" data-toggle="tab" href="#step1" role="tab" aria-controls="Step 1" aria-selected="true">Step 1: Start</a>
+		</li>
+		<li class='nav-item'>
+			<a class="nav-link" id="step2-tab" data-toggle="tab" href="#step2" role="tab" aria-controls="Step 2" aria-selected="false">Step 2: CSV</a>
+		</li>
+		<li class='nav-item'>
+			<a class="nav-link" id="step3-tab" data-toggle="tab" href="#step3" role="tab" aria-controls="Step 3" aria-selected="false">Step 3: Marker template</a>
+		</li>
+		<li class='nav-item'>
+			<a class="nav-link" id="step4-tab" data-toggle="tab" href="#step4" role="tab" aria-controls="Step 4" aria-selected="false">Step 4: Slide template</a>
+		</li>
+	</ul>
+<div id='instructions' class="tab-content" style="width:90%;margin-left:auto;margin-right:auto;margin-top:2rem;">
+<div <div class="tab-pane active  fade show" id="step1" role="tabpanel" aria-labelledby="Step 1" style='text-align:center;'>
+	
+	<h2>Make your NPStoryMap with a title, a CSV of your data, and two templates.</h2>
+	<h3>To get started, give your NPStory map a single (no whitespaces) name.<br>This will be a unique ID prefix behind-the-scenes so you could theoretically paste more than one NPStoryMap into a page.</h3>
+	<br><br>
+	<label for="NPStory_map_name">Map Name:</label><input type="text" id="NPStory_map_name" value="My_NPStoryMap"><br><Br>
+	<button type='button' class='btn btn-primary' onclick='jQuery("#step2-tab").tab("show");'>Next</button>
+</div>
+<div class="tab-pane fade" id="step2" role="tabpanel" aria-labelledby="Step 2">
+	<h3>Include CSV data.</h3>
+	<em>REQUIRED FIELDS (column names)</em>: "latitude", "longitude", "zoom", "marker".
+	<ul>
+		<li>"latitude" and "longitude" are the coordinates the map will center to when this record set is viewed by the user.</li>
+		<li>"zoom" is the zoom level to set when the map flies to the latitude/longitude set</li>
+		<li>"marker" is either a number, single letter, or valid Maki symbol name (i.e. 'circle') that will fill in the marker. An empty cell, or, 'null' will not render a marker, rendering the latitude/longitude/zoom settings as a way to set the view.</li>
+	</ul>
+	<h4>Tips</h4>
+	<ol>
+		<li>You will also want something like "text" and other fields to build out your data.</li>
+		<li>If you use image you need alt text in addition to a url to the resource.</li>
+		<li>Do not name keys/columns with numbers, spaces, and special characters. Underscore is OK.</li>
+		<li>the keys will be case sensitive!</li>
+	</ol>
+	<ul class="nav nav-tabs" id="myTab" role="tablist">
+		<li class='nav-item'>
+			<a class="nav-link active" id="cpinput-tab" data-toggle="tab" href="#cpinput" role="tab" aria-controls="Input CSV using copy/paste" aria-selected="true">CSV Copy/Paste</a>
+		</li>
+		<li class='nav-item'>
+			<a class="nav-link" id="csvresults-tab" data-toggle="tab" href="#csvresults" role="tab" aria-controls="CSV results in a table" aria-selected="false">Data Table</a>
+		</li>
+	</ul>
+	<div class="tab-content">
+		<div class="tab-pane active fade show" id="cpinput" role="tabpanel" aria-labelledby="Input CSV using Copy/Paste">
+			<textarea id="csv_config"></textarea>
+			<div style='text-align:center;'>
+				<button type='button' class='btn btn-primary' onclick='loadCSV()'>Load CSV!</button>
+			</div>
+		</div>
+		<div class="tab-pane fade" id="csvresults" role="tabpanel" aria-labelledby="CSV results in a table">
+			<div id="csvTable"></div>
+			<div style='text-align:center;'>
+				<button type='button' class='btn btn-primary' onclick='jQuery("#step3-tab").tab("show");'>Next</button>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="tab-pane fade" id="step3" role="tabpanel" aria-labelledby="Step 3">
+	<h3>Define template for map pop ups using <a href="https://github.com/janl/mustache.js" target="_blank">handlebar/mustache templating</a> and valid HTML</h3>
+	<textarea id="pop_template">{{#date}}<h2 style="min-width:300px">{{date}}</h2>{{/date}}
+{{#location}}<h3>{{location}}</h3>{{/location}}
+{{#summary}}<p>{{summary}}</p>{{/summary}}</textarea>
+	<div style='text-align:center;'>
+		<button type='button' class='btn btn-primary' onclick='jQuery("#step4-tab").tab("show");'>Next</button>
+	</div>
+</div>
+<div class="tab-pane fade" id="step4" role="tabpanel" aria-labelledby="Step 4">
+	<h3>Define template for slide body using <a href="https://github.com/janl/mustache.js" target="_blank">handlebar/mustache templating</a> and valid HTML</h3>
+	<textarea id="body_template">{{#image_alt}}<a href="{{image_source}}" target="_blank"><img src="{{img_url}}" alt="{{image_alt}}" title="{{image_title}}" style="max-height:300px;margin-left:auto;margin-right:auto;"></a><em>{{image_caption}} {{image_credit}}</em>{{/image_alt}}
+{{#location}}<h3>{{#date}}{{date}}: {{/date}}{{{location}}}</h3>{{/location}}
+{{#address}}<h4>{{address}}</h4>{{/address}}
+{{#text}}{{{text}}}{{/text}}</textarea>
+	<div style='text-align:center;'>
+		<h3>Ready? Click the Build/Rebuild Code button below!</h3>
+		</div>
+</div>
+</div>
+<hr>
+<div style="text-align:center;">
+<button onclick="render()" type='button' class='btn btn-danger'>BUILD/REBUILD CODE</button>
+</div>
+<hr>
+	<ul class="nav nav-tabs" id="results" role="tablist">
+		<li class='nav-item'>
+			<a class="nav-link active" id="test-tab" data-toggle="tab" href="#test" role="tab" aria-controls="Test out content" aria-selected="true">Test out content</a>
+		</li>
+		<li class='nav-item'>
+			<a class="nav-link" id="cmsmarkup-tab" data-toggle="tab" href="#cmsmarkup" role="tab" aria-controls="The code!" aria-selected="false">The code!</a>
+		</li>
+	</ul>
+	<div class="tab-content">
+		<div class="tab-pane active fade show" id="test" role="tabpanel" aria-labelledby="Test out content">
+			<div id="exampleJS" style="max-width:1024px;margin-left:auto;margin-right:auto;">
+			
+
+			</div>
+		</div>
+		<div class="tab-pane fade" id="cmsmarkup" role="tabpanel" aria-labelledby="The code">
+			<h3>Full code markup</h3>
+			<p>Copy paste this snippet entirely into your project. If you are using CMS be sure to paste it in the html code editing mode. The full code snippet will have fully rendered slides. At the bottom is a script block that will automatically load libraries and style sheets when the client loads your project.</p>
+			<textarea id="markup">
+			</textarea>
+		</div>
+	</div>
+<hr>
+<script>
+function loadCSV(){
+	csv_papa = Papa.parse(document.getElementById("csv_config").value,{header:false});
+	console.log(csv_papa)
+	if(csv_papa.errors.length>0)
+	{
+		var e_str = "CSV Error:\n"
+		for(var e = 0; e < csv_papa.errors.length; e++)
+		{
+			e_str += csv_papa.errors[e].message + "\n";
+		}
+		window.alert(e_str)
+		return 0;
+	}
+	else
+	{
+		var table = "<table>";
+		for(var x = 0; x < csv_papa.data.length; x++)
+		{
+			table += "<tr>";
+			for(var y = 0; y < csv_papa.data[x].length; y++)
+			{
+				if(x == 0)
+					table += "<th>";
+				else
+					table += "<td>";
+				table += csv_papa.data[x][y];
+				if(x == 0)
+					table += "</th>";
+				else
+					table += "</td>";
+			}
+			table += "</tr>";
+		}
+		table += "</table>";
+		$("#csvTable").html(table);
+		$("#csvresults-tab").tab("show");
+	}
+}
+function render(){
+	const defaultZoom = 2;
+	const defaultStartLat = 39.8283
+	const defaultStartLon = -98.5795
+	//clear any old rendered data
+	document.getElementById("markup").value = "";
+	document.getElementById("exampleJS").innerHTML = "";
+	//grab csv data
+	csv_papa = Papa.parse(document.getElementById("csv_config").value,{header:true});
+	console.log(csv_papa)
+	if(csv_papa.errors.length>0)
+	{
+		var e_str = "CSV Error:\n"
+		for(var e = 0; e < csv_papa.errors.length; e++)
+		{
+			e_str += csv_papa.errors[e].message + "\n";
+		}
+		window.alert(e_str)
+		return 0;
+	}
+	data = csv_papa.data
+	if(!data[0].longitude || !data[0].latitude || !data[0].zoom || !data[0].marker)
+	{
+		window.alert("Error - Need 'latitude', 'longitude', 'zoom', and 'marker' columns/keys")
+	}
+	popup_template = document.getElementById("pop_template").value//.replace(/(\r\n|\n|\r)/gm,"");
+	body_template = document.getElementById("body_template").value//.replace(/(\r\n|\n|\r)/gm,"");
+	name = document.getElementById("NPStory_map_name").value;
+	center_lat = data[0].latitude;
+	center_lon = data[0].longitude;
+	var zoomLvl = defaultZoom;
+	if(data[0].zoom)
+	{
+		zoomLvl = parseInt(data[0].zoom)
+	}
+	center_zoom = zoomLvl;
+	render_text = `<div id='${name}_storyMap' class='NPStoryMap_widget' style='max-width:1024px;margin-left:auto;margin-right:auto;display:flex;flex-wrap:wrap' data_latitude='${center_lat}' data_longitude='${center_lon}' data_zoom='${center_zoom}'>
+		<div id='${name}_getStarted' class='NPStoryMap_getStarted_overlay'>
+			<div class='getstartedmodal leaflet-popup-content-wrapper'>
+				${Mustache.render(body_template,data[0])}
+				<button type='button' class='btn btn-primary' onclick='${name}_getStarted()'>
+					Get Started
+				</button>
+			</div>
+		</div>
+	<div id='${name}_map' class='NPStoryMap_map' style='height:400px;width:100%;'>Map goes here. Enabling JavaScript will give you the best experience.</div>
+	<div id='${name}_story' class='NPStoryMap_story' style='opacity:0;width:100%;margin-left:auto;margin-right:auto;min-height:300px;padding:1rem;margin-top:1rem;'>`
+
+	for(var x = 0; x < data.length; x++)
+	{
+		var zoomLvl = defaultZoom;
+		if(data[x].zoom)
+		{
+			zoomLvl = parseInt(data[x].zoom)
+		}
+		render_text += "<div style='display:inline-block' data_marker='" + data[x].marker + "' data_pop='" + Mustache.render(popup_template,data[x]) + "' data_longitude='" + data[x].longitude + "' data_latitude='" + data[x].latitude + "' data_zoom='" + zoomLvl + "' class='sliderContent'>" + Mustache.render(body_template,data[x]);
+		if(x == 0)
+			render_text += "<div style='text-align:center;'><button type='button' class='btn btn-primary' onclick='" + name + "_getStarted()'>Get Started</button></div>";
+		else
+			if(x == data.length - 1)
+				render_text += "<button type='button' class='btn btn-primary' style='float:right;margin:2rem;' onclick='" + name + "_goMapNext();'>Finished</button>";
+			else
+				render_text += "<button type='button' class='btn btn-primary' style='float:right;margin:2rem;' onclick='" + name + "_goMapNext();'>Next Stop <span style='padding:0.25rem;font-family:slick;vertical-align:middle;'>→</span></button>";
+			
+		render_text += "</div>\r\n"
+	}
+	render_text += "</div>"
+	
+	//Now for all the JS stuffs
+	render_text += "<script>"
+	render_text += `
+	function ${name}_getStarted() {
+		jQuery("#${name}_getStarted div.getstartedmodal").animate({top:400},500);
+		jQuery("#${name}_getStarted").animate({opacity:"hide"},400);
+		jQuery("#${name}_story").animate({opacity:1},500,function(){
+			jQuery("html, body").animate({scrollTop: jQuery("#${name}_map").offset().top},500,function(){
+				jQuery("#${name}_story").slick("slickGoTo", 1);
+			});
+		});
+		//});
+		
+	}
+	function ${name}_goStory() {
+		jQuery("html, body").animate({scrollTop: jQuery("#${name}_story").offset().top},500)
+	}
+	function ${name}_goMapNext() {
+		jQuery("html, body").animate({scrollTop: jQuery("#${name}_map").offset().top},500,function(){
+			jQuery("#${name}_story").slick('slickNext');
+		});
+		
+	}
+	var npmapJS = document.createElement('script');
+	npmapJS.src = 'https://www.nps.gov/lib/npmap.js/4.0.0/npmap.min.js';
+	npmapJS.onload = function(){
+		jQuery("#${name}_map").text("")
+		${name}_NPMap = L.npmap.map({
+        "baseLayers": [
+          "cartodb-positron"
+        ],
+        "center": {
+          "lat": parseFloat(jQuery("#${name}_storyMap")[0].attributes.data_latitude.value),
+          "lng": parseFloat(jQuery("#${name}_storyMap")[0].attributes.data_longitude.value)
+        },
+        "div": "${name}_map",
+        "homeControl": false,
+        "overlays": [],
+        "smallzoomControl": false,
+        "zoom": parseInt(jQuery("#${name}_storyMap")[0].attributes.data_zoom.value),
+		"maxZoom":18
+		});
+		${name}_data = jQuery("#${name}_story div.sliderContent")
+		${name}_markers = []
+		for(let x = 0; x < ${name}_data.length; x++)
+		{
+			if(${name}_data[x].attributes.data_marker.value != '' && ${name}_data[x].attributes.data_marker.value != 'null')
+			{
+				console.log(x + ": " + ${name}_data[x].attributes.data_marker.value)
+				marker = L.marker({lat:${name}_data[x].attributes.data_latitude.value,lng:${name}_data[x].attributes.data_longitude.value},{icon:L.npmap.icon.maki({'marker-symbol':${name}_data[x].attributes.data_marker.value})});
+				marker.bindPopup(${name}_data[x].attributes.data_pop.value + "<div><button type='button' class='btn btn-primary'  onclick=${name}_goStory()>More</button></div>")
+				marker.on("click",function(){jQuery("#${name}_story").slick('slickGoTo',x)})
+				marker.addTo(${name}_NPMap);
+				${name}_markers.push(marker);
+				if(x > 1)
+				{
+					leaderPoly = L.polyline([[${name}_data[x-1].attributes.data_latitude.value,${name}_data[x-1].attributes.data_longitude.value],[${name}_data[x].attributes.data_latitude.value,${name}_data[x].attributes.data_longitude.value]])
+					leaderPoly.addTo(${name}_NPMap);
+				}
+			}
+			else
+			{
+				${name}_markers.push('');
+			}
+		}
+			var slickJS = document.createElement('script');
+			slickJS.src = '//cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js';
+			slickJS.onload = function(){
+				jQuery("#${name}_story").slick({
+					dots: true,
+					infinite: true,
+					speed: 300,
+					slidesToShow: 1,
+					draggable:false,
+					swipe:false
+				});
+				jQuery("#${name}_story").on('beforeChange', function(event, slick, currentSlide, nextSlide){
+					try
+					{
+						console.log(nextSlide);
+						${name}_NPMap.closePopup();
+						${name}_flying = true;
+						${name}_NPMap.flyTo({lat:${name}_data[nextSlide].attributes.data_latitude.value,lng:${name}_data[nextSlide].attributes.data_longitude.value},${name}_data[nextSlide].attributes.data_zoom.value)
+						currentMarker = ${name}_markers[nextSlide];
+						currentMarker._icon.style.zIndex = 1000;
+					}
+					catch(e)
+					{
+						console.log("No marker for " + nextSlide)
+						${name}_NPMap.closePopup();
+					}
+				});
+			};
+			document.body.appendChild(slickJS);
+			${name}_NPMap.on('zoomend',function(){
+				try
+				{
+					currentMarker._icon.style.zIndex = 1000;
+					if(${name}_flying)
+						currentMarker.openPopup();
+				}
+				catch(e)
+				{
+					console.log("No marker")
+				}
+				${name}_flying = false;
+			});
+			${name}_NPMap.on('moveend',function(){
+				try
+				{
+					currentMarker._icon.style.zIndex = 1000;
+				}
+				catch(e)
+				{
+					console.log("No marker")
+				}
+			});
+			setTimeout(function(){
+					${name}_NPMap.invalidateSize();
+					jQuery(".leaflet-container").removeClass("leaflet-touch-drag");
+					jQuery(".leaflet-container").css("-ms-touch-action","none");
+					jQuery(".leaflet-container").css("touch-action","none");
+				},500);
+	};
+	document.body.appendChild(npmapJS);
+	var npmapCSS = document.createElement('link');
+	npmapCSS.href = "https://www.nps.gov/lib/npmap.js/4.0.0/npmap.min.css";
+	npmapCSS.rel = "stylesheet";
+	document.getElementsByTagName("head")[0].appendChild(npmapCSS);
+	var slickCSS = document.createElement('link');
+	slickCSS.href = "//cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css";
+	slickCSS.rel = "stylesheet";
+	document.getElementsByTagName("head")[0].appendChild(slickCSS);
+	var slick_themeCSS = document.createElement('link');
+	slick_themeCSS.href = "//cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css";
+	slick_themeCSS.rel = "stylesheet";
+	document.getElementsByTagName("head")[0].appendChild(slick_themeCSS);
+	var slick_fix = document.createElement('style');
+	slick_fix.innerText = ".NPStoryMap_getStarted_overlay{height:400px;width:100%;max-width:1024px;position:absolute;z-index:1000;background:black;background:radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(255,255,255,0) 85%);} .NPStoryMap_getStarted_overlay .getstartedmodal{position:absolute;text-align:center;width:300px;height:80%;border:1px solid black;margin-left:50%;transform:translateX(-50%);margin-top:5%;padding:5% 2% 2% 2%;} .slick-arrow{height:300px;width:5rem;} .slick-arrow:before {color:black;font-size:2rem;opacity:1;} .slick-next{right:1rem;top:200px;z-index:100;} .slick-prev{left:1rem;top:200px;z-index:100;} .sliderContent img{max-width:90%;max-height:400px;padding:1rem;} .sliderContent{user-select:text;} .slick-dots{top:-1rem;bottom:initial;}"
+	document.getElementsByTagName("head")[0].appendChild(slick_fix)
+    `
+	render_text += "<" + "/script" + "></div>";
+	document.getElementById("markup").value = render_text;
+	$("#test-tab").tab("show");
+	$("#exampleJS").append(render_text)
+	
+	
+}
+</script>
+</body>
+</html>
